@@ -1,0 +1,132 @@
+{
+	"sheets": [
+		{
+			"name": "sprite",
+			"columns": [
+				{
+					"typeStr": "0",
+					"name": "name"
+				},
+				{
+					"typeStr": "14",
+					"name": "sprite",
+					"display": null
+				}
+			],
+			"lines": [
+				{
+					"name": "mako_world_down_1",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 0,
+						"y": 0
+					}
+				},
+				{
+					"name": "mako_world_down_2",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 1,
+						"y": 0
+					}
+				},
+				{
+					"name": "mako_world_down_3",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 2,
+						"y": 0
+					}
+				},
+				{
+					"name": "mako_world_left_1",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 0,
+						"y": 2
+					}
+				},
+				{
+					"name": "mako_world_left_2",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 1,
+						"y": 2
+					}
+				},
+				{
+					"name": "mako_world_left_3",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 2,
+						"y": 2
+					}
+				},
+				{
+					"name": "mako_world_right_1",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 0,
+						"y": 1
+					}
+				},
+				{
+					"name": "mako_world_right_2",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 1,
+						"y": 1
+					}
+				},
+				{
+					"name": "mako_world_right_3",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 2,
+						"y": 1
+					}
+				},
+				{
+					"name": "mako_world_up_1",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 0,
+						"y": 3
+					}
+				},
+				{
+					"name": "mako_world_up_2",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 1,
+						"y": 3
+					}
+				},
+				{
+					"name": "mako_world_up_3",
+					"sprite": {
+						"file": "texture/charset/mako_world.png",
+						"size": 32,
+						"x": 2,
+						"y": 3
+					}
+				}
+			],
+			"separators": [],
+			"props": {}
+		}
+	],
+	"customTypes": [],
+	"compress": false
+}

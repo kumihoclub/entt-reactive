@@ -6,8 +6,6 @@
 namespace {
 
 	std::vector<Timing::Timer*> timers;
-	f64 prev_time = 0.0;
-	f64 cur_time = 0.0;
 	f64 delta_time = 0.0;
 
 }
@@ -51,24 +49,23 @@ void Timing::Timer::pause() {
 }
 
 void Timing::Manager::init() {
-	// for uniformities sakes
+	// For uniformities sakes
 }
 
-void Timing::Manager::update() {
-	cur_time = glfwGetTime();
-	delta_time = cur_time - prev_time;
-	prev_time = cur_time;
+void Timing::Manager::update(f64 new_delta_time) {
+	delta_time = new_delta_time;
 	for (auto& timer : timers) {
 		if (timer->running()) {
 			timer->m_incremented_time -= delta_time;
 		}
 	}
+
 }
 
 void Timing::Manager::shutdown() {
 	// for uniformities sakes
 }
 
-f64 Timing::getDeltaTime() {
+f64 Timing::deltaTime() {
 	return delta_time;
 }

@@ -54,6 +54,7 @@ b32 Window::Manager::init(const char* title, u32 w, u32 h) {
 	});
 
 	int res = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+	glfwSwapInterval(0);
 	glViewport(0, 0, initial_width, initial_height);
 	glClearColor(0.175f, 0.225f, 0.250f, 1.0f);
 }
@@ -77,11 +78,7 @@ void Window::Manager::hide() {
 }
 
 void Window::Manager::clear() {
-	glClear(GL_COLOR_BUFFER_BIT);
-}
-
-void Window::Manager::swap() {
-	glfwSwapBuffers(window_handle);
+	//glClear(GL_COLOR_BUFFER_BIT);
 }
 
 b32 Window::Manager::quitEvent() {

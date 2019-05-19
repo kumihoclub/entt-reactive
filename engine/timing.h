@@ -33,10 +33,10 @@ namespace Timing {
 	class Manager {
 	public:
 		void init();
-		void update();
+		void update(f64 new_delta_time);
 		void shutdown();
 	};
 
-	f64 getDeltaTime();
+	f64 deltaTime();
 
 }

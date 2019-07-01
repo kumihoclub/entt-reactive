@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility> // pair
+
 // This file contains all internal macro definitions
 // You MUST include macro_unscope.hpp at the end of json.hpp to undef all of them
 
@@ -10,7 +12,7 @@
             #error "unsupported Clang version - see https://github.com/nlohmann/json#supported-compilers"
         #endif
     #elif defined(__GNUC__) && !(defined(__ICC) || defined(__INTEL_COMPILER))
-        #if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) < 40900
+        #if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) < 40800
             #error "unsupported GCC version - see https://github.com/nlohmann/json#supported-compilers"
         #endif
     #endif
@@ -37,6 +39,19 @@
     #define JSON_DEPRECATED
 #endif
 
+// allow for portable nodiscard warnings
+#if defined(__has_cpp_attribute)
+    #if __has_cpp_attribute(nodiscard)
+        #define JSON_NODISCARD [[nodiscard]]
+    #elif __has_cpp_attribute(gnu::warn_unused_result)
+        #define JSON_NODISCARD [[gnu::warn_unused_result]]
+    #else
+        #define JSON_NODISCARD
+    #endif
+#else
+    #define JSON_NODISCARD
+#endif
+
 // allow to disable exceptions
 #if (defined(__cpp_exceptions) || defined(__EXCEPTIONS) || defined(_CPPUNWIND)) && !defined(JSON_NOEXCEPTION)
     #define JSON_THROW(exception) throw exception
@@ -44,6 +59,7 @@
     #define JSON_CATCH(exception) catch(exception)
     #define JSON_INTERNAL_CATCH(exception) catch(exception)
 #else
+    #include <cstdlib>
     #define JSON_THROW(exception) std::abort()
     #define JSON_TRY if(true)
     #define JSON_CATCH(exception) if(false)
@@ -62,6 +78,7 @@
 #if defined(JSON_CATCH_USER)
     #undef JSON_CATCH
     #define JSON_CATCH JSON_CATCH_USER
+    #undef JSON_INTERNAL_CATCH
     #define JSON_INTERNAL_CATCH JSON_CATCH_USER
 #endif
 #if defined(JSON_INTERNAL_CATCH_USER)
@@ -71,8 +88,8 @@
 
 // manual branch prediction
 #if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
-    #define JSON_LIKELY(x)      __builtin_expect(!!(x), 1)
-    #define JSON_UNLIKELY(x)    __builtin_expect(!!(x), 0)
+    #define JSON_LIKELY(x)      __builtin_expect(x, 1)
+    #define JSON_UNLIKELY(x)    __builtin_expect(x, 0)
 #else
     #define JSON_LIKELY(x)      x
     #define JSON_UNLIKELY(x)    x
@@ -85,6 +102,37 @@
 #elif (defined(__cplusplus) && __cplusplus >= 201402L) || (defined(_HAS_CXX14) && _HAS_CXX14 == 1)
     #define JSON_HAS_CPP_14
 #endif
+
+/*!
+@brief macro to briefly define a mapping between an enum and JSON
+@def NLOHMANN_JSON_SERIALIZE_ENUM
+@since version 3.4.0
+*/
+#define NLOHMANN_JSON_SERIALIZE_ENUM(ENUM_TYPE, ...)                                           \
+    template<typename BasicJsonType>                                                           \
+    inline void to_json(BasicJsonType& j, const ENUM_TYPE& e)                                  \
+    {                                                                                          \
+        static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");         \
+        static const std::pair<ENUM_TYPE, BasicJsonType> m[] = __VA_ARGS__;                    \
+        auto it = std::find_if(std::begin(m), std::end(m),                                     \
+                               [e](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+        {                                                                                      \
+            return ej_pair.first == e;                                                         \
+        });                                                                                    \
+        j = ((it != std::end(m)) ? it : std::begin(m))->second;                                \
+    }                                                                                          \
+    template<typename BasicJsonType>                                                           \
+    inline void from_json(const BasicJsonType& j, ENUM_TYPE& e)                                \
+    {                                                                                          \
+        static_assert(std::is_enum<ENUM_TYPE>::value, #ENUM_TYPE " must be an enum!");         \
+        static const std::pair<ENUM_TYPE, BasicJsonType> m[] = __VA_ARGS__;                    \
+        auto it = std::find_if(std::begin(m), std::end(m),                                     \
+                               [j](const std::pair<ENUM_TYPE, BasicJsonType>& ej_pair) -> bool \
+        {                                                                                      \
+            return ej_pair.second == j;                                                        \
+        });                                                                                    \
+        e = ((it != std::end(m)) ? it : std::begin(m))->first;                                 \
+    }
 
 // Ugly macros to avoid uglier copy-paste when specializing basic_json. They
 // may be removed in the future once the class is split.
@@ -101,24 +149,3 @@
     basic_json<ObjectType, ArrayType, StringType, BooleanType,             \
     NumberIntegerType, NumberUnsignedType, NumberFloatType,                \
     AllocatorType, JSONSerializer>
-
-/*!
-@brief Helper to determine whether there's a key_type for T.
-
-This helper is used to tell associative containers apart from other containers
-such as sequence containers. For instance, `std::map` passes the test as it
-contains a `mapped_type`, whereas `std::vector` fails the test.
-
-@sa http://stackoverflow.com/a/7728728/266378
-@since version 1.0.0, overworked in version 2.0.6
-*/
-#define NLOHMANN_JSON_HAS_HELPER(type)                                        \
-    template<typename T> struct has_##type {                                  \
-    private:                                                                  \
-        template<typename U, typename = typename U::type>                     \
-        static int detect(U &&);                                              \
-        static void detect(...);                                              \
-    public:                                                                   \
-        static constexpr bool value =                                         \
-                std::is_integral<decltype(detect(std::declval<T>()))>::value; \
-    }

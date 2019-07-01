@@ -98,11 +98,11 @@ class basic_storage: public sparse_set<Entity> {
             return iterator{instances, index-value};
         }
 
-        inline iterator & operator-=(const difference_type value) ENTT_NOEXCEPT {
+        iterator & operator-=(const difference_type value) ENTT_NOEXCEPT {
             return (*this += -value);
         }
 
-        inline iterator operator-(const difference_type value) const ENTT_NOEXCEPT {
+        iterator operator-(const difference_type value) const ENTT_NOEXCEPT {
             return (*this + -value);
         }
 
@@ -119,7 +119,7 @@ class basic_storage: public sparse_set<Entity> {
             return other.index == index;
         }
 
-        inline bool operator!=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator!=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this == other);
         }
 
@@ -131,11 +131,11 @@ class basic_storage: public sparse_set<Entity> {
             return index < other.index;
         }
 
-        inline bool operator<=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator<=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this > other);
         }
 
-        inline bool operator>=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator>=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this < other);
         }
 
@@ -144,7 +144,7 @@ class basic_storage: public sparse_set<Entity> {
             return &(*instances)[pos];
         }
 
-        inline reference operator*() const ENTT_NOEXCEPT {
+        reference operator*() const ENTT_NOEXCEPT {
             return *operator->();
         }
 
@@ -226,7 +226,7 @@ public:
     }
 
     /*! @copydoc cbegin */
-    inline const_iterator_type begin() const ENTT_NOEXCEPT {
+    const_iterator_type begin() const ENTT_NOEXCEPT {
         return cbegin();
     }
 
@@ -255,7 +255,7 @@ public:
     }
 
     /*! @copydoc cend */
-    inline const_iterator_type end() const ENTT_NOEXCEPT {
+    const_iterator_type end() const ENTT_NOEXCEPT {
         return cend();
     }
 
@@ -281,7 +281,7 @@ public:
     }
 
     /*! @copydoc get */
-    inline object_type & get(const entity_type entt) ENTT_NOEXCEPT {
+    object_type & get(const entity_type entt) ENTT_NOEXCEPT {
         return const_cast<object_type &>(std::as_const(*this).get(entt));
     }
 
@@ -295,7 +295,7 @@ public:
     }
 
     /*! @copydoc try_get */
-    inline object_type * try_get(const entity_type entt) ENTT_NOEXCEPT {
+    object_type * try_get(const entity_type entt) ENTT_NOEXCEPT {
         return const_cast<object_type *>(std::as_const(*this).try_get(entt));
     }
 
@@ -370,9 +370,29 @@ public:
      * @param entt A valid entity identifier.
      */
     void destroy(const entity_type entt) override {
-        std::swap(instances[underlying_type::get(entt)], instances.back());
+        auto other = std::move(instances.back());
+        instances[underlying_type::get(entt)] = std::move(other);
         instances.pop_back();
         underlying_type::destroy(entt);
+    }
+
+    /**
+     * @brief Swaps entities and objects in the internal packed arrays.
+     *
+     * @warning
+     * Attempting to swap entities that don't belong to the sparse set results
+     * in undefined behavior.<br/>
+     * An assertion will abort the execution at runtime in debug mode if the
+     * sparse set doesn't contain the given entities.
+     *
+     * @param lhs A valid position within the sparse set.
+     * @param rhs A valid position within the sparse set.
+     */
+    void swap(const size_type lhs, const size_type rhs) ENTT_NOEXCEPT {
+        ENTT_ASSERT(lhs < instances.size());
+        ENTT_ASSERT(rhs < instances.size());
+        std::swap(instances[lhs], instances[rhs]);
+        underlying_type::swap(lhs, rhs);
     }
 
     /**
@@ -434,7 +454,7 @@ public:
             }, std::forward<Args>(args)...);
         }
 
-        for(size_type pos = 0, last = copy.size(); pos < last; ++pos) {
+        for(size_type pos{}, last = copy.size(); pos < last; ++pos) {
             auto curr = pos;
             auto next = copy[curr];
 
@@ -558,11 +578,11 @@ class basic_storage<Entity, Type, std::enable_if_t<std::is_empty_v<Type>>>: publ
             return iterator{index-value};
         }
 
-        inline iterator & operator-=(const difference_type value) ENTT_NOEXCEPT {
+        iterator & operator-=(const difference_type value) ENTT_NOEXCEPT {
             return (*this += -value);
         }
 
-        inline iterator operator-(const difference_type value) const ENTT_NOEXCEPT {
+        iterator operator-(const difference_type value) const ENTT_NOEXCEPT {
             return (*this + -value);
         }
 
@@ -578,7 +598,7 @@ class basic_storage<Entity, Type, std::enable_if_t<std::is_empty_v<Type>>>: publ
             return other.index == index;
         }
 
-        inline bool operator!=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator!=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this == other);
         }
 
@@ -590,11 +610,11 @@ class basic_storage<Entity, Type, std::enable_if_t<std::is_empty_v<Type>>>: publ
             return index < other.index;
         }
 
-        inline bool operator<=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator<=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this > other);
         }
 
-        inline bool operator>=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator>=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this < other);
         }
 
@@ -602,7 +622,7 @@ class basic_storage<Entity, Type, std::enable_if_t<std::is_empty_v<Type>>>: publ
             return nullptr;
         }
 
-        inline reference operator*() const ENTT_NOEXCEPT {
+        reference operator*() const ENTT_NOEXCEPT {
             return {};
         }
 
@@ -638,7 +658,7 @@ public:
     }
 
     /*! @copydoc cbegin */
-    inline iterator_type begin() const ENTT_NOEXCEPT {
+    iterator_type begin() const ENTT_NOEXCEPT {
         return cbegin();
     }
 
@@ -661,7 +681,7 @@ public:
     }
 
     /*! @copydoc cend */
-    inline iterator_type end() const ENTT_NOEXCEPT {
+    iterator_type end() const ENTT_NOEXCEPT {
         return cend();
     }
 

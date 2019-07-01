@@ -35,6 +35,7 @@ namespace entt {
  * * New instances of the given components are created and assigned to entities.
  * * The entity currently pointed is modified (as an example, if one of the
  *   given components is removed from the entity to which the iterator points).
+ * * The entity currently pointed is destroyed.
  *
  * In all the other cases, modifying the pools of the given components in any
  * way invalidates all the iterators and using them results in undefined
@@ -108,7 +109,7 @@ class basic_runtime_view {
             return other.begin == begin;
         }
 
-        inline bool operator!=(const iterator &other) const ENTT_NOEXCEPT {
+        bool operator!=(const iterator &other) const ENTT_NOEXCEPT {
             return !(*this == other);
         }
 
@@ -116,7 +117,7 @@ class basic_runtime_view {
             return begin.operator->();
         }
 
-        inline reference operator*() const ENTT_NOEXCEPT {
+        reference operator*() const ENTT_NOEXCEPT {
             return *operator->();
         }
 
@@ -153,7 +154,7 @@ class basic_runtime_view {
         return extent;
     }
 
-    inline bool valid() const ENTT_NOEXCEPT {
+    bool valid() const ENTT_NOEXCEPT {
         return !pools.empty() && pools.front();
     }
 

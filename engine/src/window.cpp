@@ -4,107 +4,98 @@
 
 #include "window.h"
 
-namespace {
+#include <iostream>
 
-	u8 prev_keyboard_state[GLFW_KEY_LAST];
-	u8 cur_keyboard_state[GLFW_KEY_LAST];
-	b32 quit_event = false;
-	i32 initial_width = 0;
-	i32 initial_height = 0;
-	b32 is_minimized = false;
-	GLFWwindow* window_handle = nullptr;
 
-}
+void Window::startup(FrameContext& frame_context) {
 
-b32 Window::Manager::init(const char* title, u32 w, u32 h) {
-	glfwInit();
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
-	glfwWindowHint(GLFW_DEPTH_BITS, GLFW_FALSE);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-	glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+	memset(m_cur_input_state, 0, SDL_NUM_SCANCODES);
+	memset(m_prev_input_state, 0, SDL_NUM_SCANCODES);
 
-	window_handle = glfwCreateWindow(w, h, title, NULL, NULL);
-	if (!window_handle) {
-		glfwTerminate();
-		return false;
+	m_frame_context = &frame_context;
+
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER | SDL_INIT_EVENTS);
+
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1); 
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 0);
+
+	const Config& config = Config::get();
+	m_handle = SDL_CreateWindow(config.title.c_str(),
+		SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+		config.window_size.x, config.window_size.y,
+		SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI | SDL_WINDOW_HIDDEN);
+
+	m_context = SDL_GL_CreateContext(m_handle);
+
+	SDL_GL_MakeCurrent(m_handle, m_context);
+
+	if(!gladLoadGLLoader(SDL_GL_GetProcAddress)) {
+		std::cout << "Failed to initialize GLAD" << std::endl;
 	}
-	glfwMakeContextCurrent(window_handle);
 
-	glfwGetFramebufferSize(window_handle, &initial_width, &initial_height);
+	glViewport(0, 0, config.window_size.x, config.window_size.y);
 
-	memset(prev_keyboard_state, 0, GLFW_KEY_LAST);
-	memset(cur_keyboard_state, 0, GLFW_KEY_LAST);
+}
 
-	glfwSetKeyCallback(window_handle, [](GLFWwindow * window, int key, int scancode, int action, int mods) {
-		if (action == GLFW_PRESS) {
-			cur_keyboard_state[key] = true;
+void Window::shutdown() {
+
+	SDL_GL_DeleteContext(m_context);
+	SDL_DestroyWindow(m_handle);
+
+}
+
+void Window::recordInput() {
+
+	//m_frame_context->frontFrame().input_buffer.resize(0);
+	int num_keys;
+	SDL_GetKeyboardState(&num_keys);
+	memcpy(m_prev_input_state, m_cur_input_state, num_keys);
+	SDL_Event e;
+	while (SDL_PollEvent(&e)) {
+		if (e.type == SDL_KEYUP || e.type == SDL_KEYDOWN) {
+			if (e.type == SDL_KEYUP && e.key.keysym.scancode == SDL_SCANCODE_F10) {
+				const Config& config = Config::get();
+				if (m_fullscreen == true) {
+					SDL_ShowCursor(SDL_ENABLE);
+					glViewport(0, 0, config.window_size.x, config.window_size.y);
+					SDL_SetWindowFullscreen(m_handle, 0);
+				}
+				else {
+					SDL_ShowCursor(SDL_DISABLE);
+					SDL_DisplayMode current;
+					SDL_GetCurrentDisplayMode(SDL_GetWindowDisplayIndex(m_handle), &current);
+					glViewport(0, 0, current.w, current.h);
+					SDL_SetWindowFullscreen(m_handle, SDL_WINDOW_FULLSCREEN_DESKTOP);
+				}
+				m_fullscreen = !m_fullscreen;
+			}
+			//m_frame_context->frontFrame().input_buffer.push_back(e);
 		}
-		else if (action == GLFW_RELEASE) {
-			cur_keyboard_state[key] = false;
+		else if (e.type == SDL_QUIT) {
+			m_quit_event = true;
 		}
-	});
-
-	glfwSetWindowIconifyCallback(window_handle, [](GLFWwindow * window, int state) {
-		if (window == window_handle) {
-			is_minimized = state;
-		}
-	});
-
-	int res = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-	glfwSwapInterval(0);
-	glViewport(0, 0, initial_width, initial_height);
-	glClearColor(0.175f, 0.225f, 0.250f, 1.0f);
+	}
+	const u8* keystate = SDL_GetKeyboardState(&num_keys);
+	memcpy(m_cur_input_state, keystate, num_keys);
+	m_frame_context->frontFrame().input.set(m_cur_input_state, m_prev_input_state, num_keys);
 }
 
-void Window::Manager::update() {
-	memcpy(prev_keyboard_state, cur_keyboard_state, GLFW_KEY_LAST);
-	glfwPollEvents();
+b32 Window::quitEvent() {
+	return m_quit_event;
 }
 
-void Window::Manager::shutdown() {
-	glfwDestroyWindow(window_handle);
-	glfwTerminate();
+
+void Window::show() {
+	SDL_ShowWindow(m_handle);
 }
 
-void Window::Manager::show() {
-	glfwShowWindow(window_handle);
+void Window::hide() {
+	SDL_HideWindow(m_handle);
 }
 
-void Window::Manager::hide() {
-	glfwHideWindow(window_handle);
-}
-
-void Window::Manager::clear() {
-	//glClear(GL_COLOR_BUFFER_BIT);
-}
-
-b32 Window::Manager::quitEvent() {
-	return glfwWindowShouldClose(window_handle);
-}
-
-b32 Window::Manager::minimized() {
-	return is_minimized;
-}
-
-u32 Window::View::getWidth() {
-	return initial_width;
-}
-
-u32 Window::View::getHeight() {
-	return initial_height;
-}
-
-b32 Window::Control::keyPressed(u8 key) {
-	return (cur_keyboard_state[key] == true && prev_keyboard_state[key] == false);
-}
-
-b32 Window::Control::keyHeld(u8 key) {
-	return (cur_keyboard_state[key] == true && prev_keyboard_state[key] == true);
-}
-
-b32 Window::Control::keyReleased(u8 key) {
-	return (cur_keyboard_state[key] == false && prev_keyboard_state[key] == true);
+void Window::swap() {
+	SDL_GL_SwapWindow(m_handle);
 }

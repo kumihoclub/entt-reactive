@@ -2,6 +2,7 @@
 
 #include <cstdint> // size_t
 #include <utility> // declval
+#include <string> // string
 
 #include <nlohmann/detail/meta/detected.hpp>
 #include <nlohmann/detail/meta/type_traits.hpp>
@@ -137,5 +138,5 @@ public:
       "Missing/invalid function: bool parse_error(std::size_t, const "
       "std::string&, const exception&)");
 };
-}
-}
+}  // namespace detail
+}  // namespace nlohmann

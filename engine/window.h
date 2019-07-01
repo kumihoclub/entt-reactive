@@ -1,37 +1,27 @@
 #pragma once
 
 #include "common.h"
+#include "frame.h"
+#include "config.h"
 
 #include "glad/glad.h"
-#include "glfw/glfw3.h"
+#include "SDL2/SDL.h"
 
-namespace Window {
-
-	// Restricted manager class
-	class Manager {
-	public:
-		b32 init(const char* title, u32 w, u32 h);
-		void update();
-		void shutdown();
-		void show();
-		void hide();
-		void clear();
-		void swap();
-		b32 quitEvent();
-		b32 minimized();
-	};
-
-	// Public api
-
-	namespace View {
-		u32 getWidth();
-		u32 getHeight();
-	}
-
-	namespace Control {
-		b32 keyPressed(u8 key);
-		b32 keyHeld(u8 key);
-		b32 keyReleased(u8 key);
-	}
-
-}
+class Window {
+public:
+	void startup(FrameContext& frame_context);
+	void shutdown();
+	void recordInput();
+	b32 quitEvent();
+	void show();
+	void hide();
+	void swap();
+private:
+	FrameContext* m_frame_context = nullptr;
+	SDL_Window* m_handle = nullptr;
+	SDL_GLContext m_context;
+	b32 m_quit_event = false;
+	b32 m_fullscreen = false;
+	u8 m_cur_input_state[SDL_NUM_SCANCODES];
+	u8 m_prev_input_state[SDL_NUM_SCANCODES];
+};

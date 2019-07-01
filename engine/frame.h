@@ -1,43 +1,57 @@
 #pragma once
 
 #include "transform.h"
-#include "sprite.h"
-#include "camera.h"
-#include "shader.h"
+
+#include "SDL2/SDL.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
 
 #include <vector>
-#include "renderable.h"
-#include "transform.h"
-#include "sprite.h"
-
 #include <optional>
+#include <tuple>
 #include <atomic>
-#include <mutex>
+#include <condition_variable>
 
-struct DrawCommand {
-	Transform transform;
-	Sprite sprite;
-};
+#include "common.h"
+#include "input.h"
+
+#include "entt/entt.hpp"
+
+// fwddecl
+struct SpriteRenderable;
 
 class Frame {
 public:
 	Frame();
-	void createDrawCommand(Transform& transform, Sprite& sprite);
-	void consumeDrawCommands(std::vector<Renderable>& staging_buffer);
+	static void prepareObservers();
+	void recordCommands();
+	void wait();
+	void finish();
+	b32 ready();
+	f64 delta_time = 0.0;
+	InputState input;
 	struct {
-		glm::vec4 environment = { 1.0f, 1.0f, 1.0f, 1.0f };
-		f32 glitch_strength = 0.0f;
-	} background_params;
+		std::vector<std::tuple<u32, u32, glm::mat4, SpriteRenderable>> create_commands;
+		std::vector<std::tuple<u32, glm::mat4>> transform_updates;
+		std::vector<std::tuple<u32, SpriteRenderable>> renderable_updates;
+		std::vector<u32> destroy_commands;
+	} sprite;
 	struct {
-		glm::vec4 environment = { 1.0f, 1.0f, 1.0f, 1.0f };
-		f32 glitch_strength = 0.0f;
-	} world_filter_params;
-	struct {
-		glm::vec4 environment = { 1.0f, 1.0f, 1.0f, 1.0f };
-		f32 glitch_strength = 0.0f;
-	} gui_filter_params;
+		glm::mat4 view = glm::mat4(1.0);
+		glm::mat4 proj = glm::ortho(-(960.0f / 2), (960.0f / 2), -(540.0f / 2), (540.0f / 2), -64.0f, 64.0f); // TODO: MAKE THIS CONFIGURABLE AND NOT MAGIC!!!!!
+	} view_proj;
+	friend class FrameContext;
+};
+
+class FrameContext {
+public:
+	void startup();
+	void shutdown();
+	Frame& frontFrame();
+	Frame& backFrame();
+	void swapFrames();
 private:
-	void consumeCommands(std::vector<Renderable>& staging_buffer);
-	std::vector<DrawCommand> m_commands;
-	std::mutex m_comsume_lock;
+	Frame m_frames[2];
+	Frame* m_front = nullptr;
+	Frame* m_back = nullptr;
 };

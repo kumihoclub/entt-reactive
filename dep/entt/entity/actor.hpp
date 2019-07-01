@@ -29,17 +29,23 @@ struct basic_actor {
     /*! @brief Underlying entity identifier. */
     using entity_type = Entity;
 
+    basic_actor() ENTT_NOEXCEPT
+        : reg{nullptr}, entt{entt::null}
+    {}
+
     /**
      * @brief Constructs an actor by using the given registry.
      * @param ref An entity-component system properly initialized.
      */
-    basic_actor(registry_type &ref)
+    explicit basic_actor(registry_type &ref)
         : reg{&ref}, entt{ref.create()}
     {}
 
     /*! @brief Default destructor. */
     virtual ~basic_actor() {
-        reg->destroy(entt);
+        if(*this) {
+            reg->destroy(entt);
+        }
     }
 
     /**
@@ -151,12 +157,12 @@ struct basic_actor {
      * @brief Returns a reference to the underlying registry.
      * @return A reference to the underlying registry.
      */
-    inline const registry_type & backend() const ENTT_NOEXCEPT {
+    const registry_type & backend() const ENTT_NOEXCEPT {
         return *reg;
     }
 
     /*! @copydoc backend */
-    inline registry_type & backend() ENTT_NOEXCEPT {
+    registry_type & backend() ENTT_NOEXCEPT {
         return const_cast<registry_type &>(std::as_const(*this).backend());
     }
 
@@ -164,8 +170,16 @@ struct basic_actor {
      * @brief Returns the entity associated with an actor.
      * @return The entity associated with the actor.
      */
-    inline entity_type entity() const ENTT_NOEXCEPT {
+    entity_type entity() const ENTT_NOEXCEPT {
         return entt;
+    }
+
+    /**
+     * @brief Checks if an actor refers to a valid entity or not.
+     * @return True if the actor refers to a valid entity, false otherwise.
+     */
+    explicit operator bool() const ENTT_NOEXCEPT {
+        return reg && reg->valid(entt);
     }
 
 private:

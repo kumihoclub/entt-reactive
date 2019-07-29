@@ -22,8 +22,6 @@ Window window;
 Graphics graphics;
 Sim sim;
 
-entt::registry asd;
-
 int main(int argc, char *argv[]) {
 
 	config.title = "Black Telephone";
